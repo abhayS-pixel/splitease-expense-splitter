@@ -1,0 +1,60 @@
+---
+title: Logical ER Diagram — Expense Splitting App (crow's foot, with MongoDB mapping)
+---
+erDiagram
+    USER ||--o{ GROUP : "creates"
+    USER ||--o{ GROUP_MEMBER : "is"
+    GROUP ||--|{ GROUP_MEMBER : "has members"
+    GROUP ||--o{ EXPENSE : "contains"
+    USER ||--o{ EXPENSE : "pays (paidBy)"
+    EXPENSE ||--|{ EXPENSE_PARTICIPANT : "split among"
+    USER ||--o{ EXPENSE_PARTICIPANT : "shares in"
+    GROUP ||--o{ SETTLEMENT : "records"
+    USER ||--o{ SETTLEMENT : "sends (paidBy)"
+    USER ||--o{ SETTLEMENT : "receives (paidTo)"
+
+    USER {
+        ObjectId _id PK "users collection"
+        string name "2-60 chars"
+        string email UK "unique index"
+        string phone "optional"
+        date createdAt
+    }
+    GROUP {
+        ObjectId _id PK "groups collection"
+        string name
+        string description
+        string currency "INR | USD | EUR"
+        ObjectId createdBy FK "-> USER"
+        date createdAt
+    }
+    GROUP_MEMBER {
+        ObjectId userId FK "-> USER"
+        string role "admin | member"
+        date joinedAt "embedded: groups.members[]"
+    }
+    EXPENSE {
+        ObjectId _id PK "expenses collection"
+        ObjectId groupId FK "-> GROUP"
+        ObjectId paidBy FK "-> USER"
+        string description
+        string category
+        double amount "min 0.01"
+        string splitType "EQUAL | EXACT"
+        date expenseDate
+        date createdAt
+    }
+    EXPENSE_PARTICIPANT {
+        ObjectId userId FK "-> USER"
+        double share "embedded: expenses.participants[]"
+    }
+    SETTLEMENT {
+        ObjectId _id PK "settlements collection"
+        ObjectId groupId FK "-> GROUP"
+        ObjectId paidBy FK "-> USER (debtor)"
+        ObjectId paidTo FK "-> USER (creditor)"
+        double amount "min 0.01"
+        string method "UPI | Cash | Card ..."
+        string note
+        date settledAt
+    }

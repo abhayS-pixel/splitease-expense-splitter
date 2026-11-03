@@ -1,0 +1,161 @@
+
+========================================================================
+  1. Creating collections with schema validation
+========================================================================
+  Collections: expenses, groups, settlements, users
+
+========================================================================
+  2. Creating indexes
+========================================================================
+  users       : _id_, uniq_email
+  groups      : _id_, groups_by_member
+  expenses    : _id_, group_expenses_by_date, expenses_by_payer, expenses_by_participant
+  settlements : _id_, group_settlements, settlement_parties
+
+========================================================================
+  4. Inserting sample data
+========================================================================
+  users       : 6 documents
+  groups      : 2 documents
+  expenses    : 10 documents
+  settlements : 2 documents
+  Validation check: invalid expense rejected -> Document failed validation
+  Unique index check: duplicate email rejected -> E11000
+
+========================================================================
+  QUERY 1: All expenses & total spending — group 'Flat 302 - Koramangala'
+========================================================================
+  date       | description            | category  | amount   | paidByName   | splitType | splitAmong
+  -----------+------------------------+-----------+----------+--------------+-----------+-----------
+  2026-10-01 | October rent           | Rent      | 40000.00 | Aarav Sharma | EQUAL     | 4         
+  2026-10-05 | Electricity bill       | Utilities | 2350.00  | Priya Nair   | EQUAL     | 4         
+  2026-10-08 | Groceries (Sneha away) | Groceries | 1849.00  | Rohan Mehta  | EQUAL     | 3         
+  2026-10-10 | Wi-Fi recharge         | Utilities | 999.00   | Sneha Reddy  | EQUAL     | 4         
+  2026-10-12 | Pizza night            | Food      | 1600.00  | Priya Nair   | EXACT     | 4         
+  2026-10-15 | Deep cleaning service  | Services  | 1200.00  | Aarav Sharma | EQUAL     | 4         
+
+  TOTAL SPENDING: Rs 47998.00  (6 expenses, average Rs 7999.67)
+
+  Spending by category:
+  category  | count | spent   
+  ----------+-------+---------
+  Rent      | 1     | 40000.00
+  Utilities | 2     | 3349.00 
+  Groceries | 1     | 1849.00 
+  Food      | 1     | 1600.00 
+  Services  | 1     | 1200.00 
+
+========================================================================
+  QUERY 2: Member balances — Flat 302 - Koramangala
+========================================================================
+  name         | totalPaid | totalShare | settledOut | settledIn | net       | status    | amount  
+  -------------+-----------+------------+------------+-----------+-----------+-----------+---------
+  Aarav Sharma | 41200.00  | 12253.59   | 0.00       | 5000.00   | 23946.41  | gets back | 23946.41
+  Sneha Reddy  | 999.00    | 11437.25   | 5000.00    | 0.00      | -5438.25  | owes      | 5438.25 
+  Priya Nair   | 3950.00   | 12053.58   | 0.00       | 0.00      | -8103.58  | owes      | 8103.58 
+  Rohan Mehta  | 1849.00   | 12253.58   | 0.00       | 0.00      | -10404.58 | owes      | 10404.58
+  Check: sum of all net balances = 0.00 (must be 0.00)
+
+========================================================================
+  QUERY 2: Member balances — Goa Trip 2026
+========================================================================
+  name         | totalPaid | totalShare | settledOut | settledIn | net      | status    | amount 
+  -------------+-----------+------------+------------+-----------+----------+-----------+--------
+  Karthik Rao  | 18000.00  | 7915.00    | 0.00       | 2000.00   | 8085.00  | gets back | 8085.00
+  Rohan Mehta  | 3260.00   | 6515.00    | 2000.00    | 0.00      | -1255.00 | owes      | 1255.00
+  Aarav Sharma | 6000.00   | 7315.00    | 0.00       | 0.00      | -1315.00 | owes      | 1315.00
+  Meera Iyer   | 2400.00   | 7915.00    | 0.00       | 0.00      | -5515.00 | owes      | 5515.00
+  Check: sum of all net balances = 0.00 (must be 0.00)
+
+========================================================================
+  QUERY 3: Expense history & contributions — Aarav Sharma
+========================================================================
+  date       | group                  | description             | amount   | paidByName   | iPaid    | myShare  | netEffect
+  -----------+------------------------+-------------------------+----------+--------------+----------+----------+----------
+  2026-10-01 | Flat 302 - Koramangala | October rent            | 40000.00 | Aarav Sharma | 40000.00 | 10000.00 | 30000.00 
+  2026-10-05 | Flat 302 - Koramangala | Electricity bill        | 2350.00  | Priya Nair   | 0.00     | 587.50   | -587.50  
+  2026-10-08 | Flat 302 - Koramangala | Groceries (Sneha away)  | 1849.00  | Rohan Mehta  | 0.00     | 616.34   | -616.34  
+  2026-10-10 | Flat 302 - Koramangala | Wi-Fi recharge          | 999.00   | Sneha Reddy  | 0.00     | 249.75   | -249.75  
+  2026-10-12 | Flat 302 - Koramangala | Pizza night             | 1600.00  | Priya Nair   | 0.00     | 500.00   | -500.00  
+  2026-10-15 | Flat 302 - Koramangala | Deep cleaning service   | 1200.00  | Aarav Sharma | 1200.00  | 300.00   | 900.00   
+  2026-10-17 | Goa Trip 2026          | Beach resort (3 nights) | 18000.00 | Karthik Rao  | 0.00     | 4500.00  | -4500.00 
+  2026-10-18 | Goa Trip 2026          | Dinner at beach shack   | 3260.00  | Rohan Mehta  | 0.00     | 815.00   | -815.00  
+  2026-10-19 | Goa Trip 2026          | Water sports            | 6000.00  | Aarav Sharma | 6000.00  | 2000.00  | 4000.00  
+
+  Contribution per group:
+  group                  | expenses | totalPaid | totalShare
+  -----------------------+----------+-----------+-----------
+  Flat 302 - Koramangala | 6        | 41200.00  | 12253.59  
+  Goa Trip 2026          | 3        | 6000.00   | 7315.00   
+
+  Overall: involved in 9 expenses, paid for 3; paid Rs 47200.00, own share Rs 19568.59
+
+  Settlement payments involving Aarav:
+  date       | group                  | from        | to           | amount  | method | direction
+  -----------+------------------------+-------------+--------------+---------+--------+----------
+  2026-10-16 | Flat 302 - Koramangala | Sneha Reddy | Aarav Sharma | 5000.00 | UPI    | received 
+
+========================================================================
+  QUERY 4a: Unsettled balances across all groups
+========================================================================
+  group                  | name         | net       | status   
+  -----------------------+--------------+-----------+----------
+  Flat 302 - Koramangala | Aarav Sharma | 23946.41  | gets back
+  Flat 302 - Koramangala | Sneha Reddy  | -5438.25  | owes     
+  Flat 302 - Koramangala | Priya Nair   | -8103.58  | owes     
+  Flat 302 - Koramangala | Rohan Mehta  | -10404.58 | owes     
+  Goa Trip 2026          | Karthik Rao  | 8085.00   | gets back
+  Goa Trip 2026          | Rohan Mehta  | -1255.00  | owes     
+  Goa Trip 2026          | Aarav Sharma | -1315.00  | owes     
+  Goa Trip 2026          | Meera Iyer   | -5515.00  | owes     
+
+========================================================================
+  QUERY 4b: Suggested payments to settle 'Goa Trip 2026'
+========================================================================
+  from         | to          | amount 
+  -------------+-------------+--------
+  Meera Iyer   | Karthik Rao | 5515.00
+  Aarav Sharma | Karthik Rao | 1315.00
+  Rohan Mehta  | Karthik Rao | 1255.00
+
+========================================================================
+  QUERY 4c: Recording the suggested settlement payments for 'Goa Trip 2026'
+========================================================================
+  Recorded: Meera Iyer paid Rs 5515.00 to Karthik Rao
+  Recorded: Aarav Sharma paid Rs 1315.00 to Karthik Rao
+  Recorded: Rohan Mehta paid Rs 1255.00 to Karthik Rao
+  Rule check: extra payment rejected -> Payer must owe money and receiver must be owed money
+
+========================================================================
+  QUERY 2: Member balances — Goa Trip 2026 (after settlement)
+========================================================================
+  name         | totalPaid | totalShare | settledOut | settledIn | net  | status     | amount
+  -------------+-----------+------------+------------+-----------+------+------------+-------
+  Aarav Sharma | 6000.00   | 7315.00    | 1315.00    | 0.00      | 0.00 | settled up | 0.00  
+  Rohan Mehta  | 3260.00   | 6515.00    | 3255.00    | 0.00      | 0.00 | settled up | 0.00  
+  Meera Iyer   | 2400.00   | 7915.00    | 5515.00    | 0.00      | 0.00 | settled up | 0.00  
+  Karthik Rao  | 18000.00  | 7915.00    | 0.00       | 10085.00  | 0.00 | settled up | 0.00  
+  Check: sum of all net balances = 0.00 (must be 0.00)
+
+========================================================================
+  QUERY 4d: Settlement history — Goa Trip 2026
+========================================================================
+  date       | from         | to          | amount  | method | note                 
+  -----------+--------------+-------------+---------+--------+----------------------
+  2026-10-20 | Rohan Mehta  | Karthik Rao | 2000.00 | Cash   | Hotel share (partial)
+  2026-10-27 | Meera Iyer   | Karthik Rao | 5515.00 | UPI    | Trip settle-up       
+  2026-10-27 | Aarav Sharma | Karthik Rao | 1315.00 | UPI    | Trip settle-up       
+  2026-10-27 | Rohan Mehta  | Karthik Rao | 1255.00 | UPI    | Trip settle-up       
+
+========================================================================
+  Remaining unsettled balances (all groups)
+========================================================================
+  group                  | name         | net       | status   
+  -----------------------+--------------+-----------+----------
+  Flat 302 - Koramangala | Aarav Sharma | 23946.41  | gets back
+  Flat 302 - Koramangala | Sneha Reddy  | -5438.25  | owes     
+  Flat 302 - Koramangala | Priya Nair   | -8103.58  | owes     
+  Flat 302 - Koramangala | Rohan Mehta  | -10404.58 | owes     
+
+Done. Database 'expense_splitter' is ready.
+
